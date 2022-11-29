@@ -3,7 +3,10 @@ package telran.java2022.accounting.service;
 import java.time.LocalDate;
 
 import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
+import org.springframework.jmx.export.annotation.ManagedAttribute;
+import org.springframework.jmx.export.annotation.ManagedResource;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -19,13 +22,25 @@ import telran.java2022.accounting.model.UserAccount;
 
 @Service
 @RequiredArgsConstructor
+@ManagedResource
+
 public class UserAccountServiceImpl implements UserAccountService, CommandLineRunner {
 	final UserAccountRepository repository;
 	final ModelMapper modelMapper;
 	final PasswordEncoder passwordEncoder;
-	long passwordPeriod = 60;
+	@Value("${password.period:30}")
+	long passwordPeriod;
 
-
+	@ManagedAttribute
+	public long getPasswordPeriod() {
+		return passwordPeriod;
+	}
+	
+	@ManagedAttribute
+	public void setPasswordPeriod(long passwordPeriod) {
+		this.passwordPeriod = passwordPeriod;
+	}
+	
 	@Override
 	public UserAccountResponseDto addUser(UserRegisterDto userRegisterDto) {
 		if (repository.existsById(userRegisterDto.getLogin())) {
@@ -101,5 +116,7 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 		}
 		
 	}
+
+	
 
 }
