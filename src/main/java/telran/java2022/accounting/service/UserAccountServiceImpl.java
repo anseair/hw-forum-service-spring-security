@@ -23,7 +23,6 @@ import telran.java2022.accounting.model.UserAccount;
 @Service
 @RequiredArgsConstructor
 @ManagedResource
-
 public class UserAccountServiceImpl implements UserAccountService, CommandLineRunner {
 	final UserAccountRepository repository;
 	final ModelMapper modelMapper;
@@ -47,8 +46,8 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 			throw new UserExistsException(userRegisterDto.getLogin());
 		}
 		UserAccount userAccount = modelMapper.map(userRegisterDto, UserAccount.class);
-		String password = passwordEncoder.encode(userRegisterDto.getPassword());
-		userAccount.setPassword(password);
+//		String password = passwordEncoder.encode(userRegisterDto.getPassword());
+		userAccount.setPassword(userRegisterDto.getPassword());
 		userAccount.setPasswordExpDate(LocalDate.now().plusDays(passwordPeriod));
 		repository.save(userAccount);
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
@@ -56,20 +55,20 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 
 	@Override
 	public UserAccountResponseDto getUser(String login) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
 
 	@Override
 	public UserAccountResponseDto removeUser(String login) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
 		repository.deleteById(login);
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
 
 	@Override
 	public UserAccountResponseDto editUser(String login, UserUpdateDto updateDto) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
 		if (updateDto.getFirstName() != null) {
 			userAccount.setFirstName(updateDto.getFirstName());
 		}
@@ -82,7 +81,7 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 
 	@Override
 	public RolesResponseDto changeRolesList(String login, String role, boolean isAddRole) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
 		boolean res;
 		if (isAddRole) {
 			res = userAccount.addRole(role.toUpperCase());
@@ -97,7 +96,7 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 
 	@Override
 	public void changePassword(String login, String newPassword) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
 		String password = passwordEncoder.encode(newPassword);
 		userAccount.setPassword(password);
 		userAccount.setPasswordExpDate(LocalDate.now().plusDays(passwordPeriod));
