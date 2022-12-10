@@ -55,20 +55,20 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 
 	@Override
 	public UserAccountResponseDto getUser(String login) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
 
 	@Override
 	public UserAccountResponseDto removeUser(String login) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
 		repository.deleteById(login);
 		return modelMapper.map(userAccount, UserAccountResponseDto.class);
 	}
 
 	@Override
 	public UserAccountResponseDto editUser(String login, UserUpdateDto updateDto) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
 		if (updateDto.getFirstName() != null) {
 			userAccount.setFirstName(updateDto.getFirstName());
 		}
@@ -81,7 +81,7 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 
 	@Override
 	public RolesResponseDto changeRolesList(String login, String role, boolean isAddRole) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
 		boolean res;
 		if (isAddRole) {
 			res = userAccount.addRole(role.toUpperCase());
@@ -96,7 +96,7 @@ public class UserAccountServiceImpl implements UserAccountService, CommandLineRu
 
 	@Override
 	public void changePassword(String login, String newPassword) {
-		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException(login));
+		UserAccount userAccount = repository.findById(login).orElseThrow(() -> new UserNotFoundException());
 		String password = passwordEncoder.encode(newPassword);
 		userAccount.setPassword(password);
 		userAccount.setPasswordExpDate(LocalDate.now().plusDays(passwordPeriod));

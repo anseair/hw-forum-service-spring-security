@@ -12,7 +12,10 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import org.aspectj.apache.bcel.classfile.Constant;
 import org.junit.jupiter.api.Assertions;
@@ -29,6 +32,7 @@ import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.web.client.HttpServerErrorException;
 
@@ -51,38 +55,46 @@ class ForumServiceSpringSecurityApplicationTests {
 //	ObjectMapper objectMapper;
 	
 	@MockBean
-	UserAccountRepository userAccountRepository;
+	UserAccountRepository userAccountRepositoryTest;
 
 	@Autowired
-	UserAccountService userAccountService;
+	UserAccountService userAccountServiceTest;
 	
 	@Autowired
 	ModelMapper modelMapper;
-	
-	@Mock
-	UserAccount userAccount;
+	@Autowired
+	PasswordEncoder passwordEncoder;
 
+	List<UserAccount> users = new ArrayList<>();
+	
 	@BeforeEach
 	public void setUp() {
-		userAccount = new UserAccount("User1", "111", "John", "Smith");
-		userAccountRepository.save(userAccount);
+		userAccountServiceTest = new UserAccountServiceImpl(userAccountRepositoryTest, modelMapper, passwordEncoder);
+		UserAccount user1 = new UserAccount("User1", "111", "John", "Smith");
+		UserAccount user2 = new UserAccount("User2", "222", "Mary", "Smith");
+		UserAccount user3 = new UserAccount("User3", "333", "Peter", "");
+		users.add(user1);
+		users.add(user2);
+		users.add(user3);
+		users.stream().map(u -> modelMapper.map(u, UserRegisterDto.class)).forEach(u -> userAccountServiceTest.addUser(u));
 	}
 	
-	@Test
-	public void addUser() throws Exception {
-		UserAccount expected = new UserAccount("User1", "111", "John", "Smith");
-		
-		System.out.println("JUnit test for addUser method");
-		System.out.println(this.userAccount.getLogin());
-		System.out.println(expected.getLogin());
-		
-		UserRegisterDto userRegisterDto = modelMapper.map(expected, UserRegisterDto.class);	
-		
-		Mockito.when(userAccountRepository.existsById(expected.getLogin())).thenReturn(false);
-		UserAccountResponseDto actual = userAccountService.addUser(userRegisterDto);
-		Assertions.assertEquals(expected.getLogin(), actual.getLogin());
+//	@Test
+//	public void addUser() throws Exception {
+//		UserAccount user = new UserAccount("User1", "111", "John", "Smith");
+//	    UserAccount expected = new UserAccount("User1", "111", "John", "Smith");
+//
+////		System.out.println("JUnit test for addUser method");
+////		System.out.println(this.userAccount.getLogin());
+////		System.out.println(expected.getLogin());
+//		
+//		UserRegisterDto userRegisterDto = modelMapper.map(user, UserRegisterDto.class);	
+//		Mockito.when(userAccountRepository.save(user)).thenReturn(expected);
+//
+////		Mockito.when(userAccountRepository.existsById(userRegisterDto.getLogin())).thenReturn(false);
+//		UserAccountResponseDto actual = userAccountService.addUser(userRegisterDto);
+//		Assertions.assertEquals(expected.getLogin(), actual.getLogin());
 
-//		Mockito.when(userAccountRepository.save(userAccount)).thenReturn(new UserAccount());
 
 		
 //		mockMvc.perform(post("/account/register")
@@ -91,7 +103,7 @@ class ForumServiceSpringSecurityApplicationTests {
 //					)
 //				.andExpect(status().isOk())
 //				.andExpect(content().json(objectMapper.writeValueAsString(userAccount)));
-	}
+//	}
 	
 	
 	
@@ -116,16 +128,22 @@ class ForumServiceSpringSecurityApplicationTests {
 	
 	@Test
 	public void getUserByLogin() throws Exception {
+		
 		String expected = "User1";
-		when(userAccountRepository.findById(expected)).thenReturn(Optional.of(userAccount));
-		UserAccountResponseDto actual = userAccountService.getUser(expected);
+		
+//		when(userAccountServiceTest.getUser(expected)).thenReturn(users);
+		UserAccountResponseDto actual = userAccountServiceTest.getUser(expected);
 		
 		System.out.println("JUnit test for getUserByLogin method");
 		System.out.println(actual.getLogin());
 		System.out.println(actual.getFirstName());
 		System.out.println(actual.getLastName());
 		
-		Assertions.assertEquals(expected, actual.getLogin());
+		Assertions.assertEquals(users.indexOf(0), actual);
+		Assertions.assertNull(userAccountServiceTest.getUser("User4"));
+	}
+
+		
 		
 //		assertThat(res.getLogin()).isEqualTo(userAccount.getLogin());
 		
@@ -137,25 +155,26 @@ class ForumServiceSpringSecurityApplicationTests {
 //				.andExpect(jsonPath("$.password").value("1234"))
 //				.andExpect(jsonPath("$.firstName").value("John"))
 //				.andExpect(jsonPath("$.lastName").value("Smith"));
-	}
+//	}
 
 //	@Test
 //	public void UserNotFoundByLogin() throws Exception {
-//		String expected = "User2";
-//		when(userAccountRepository.findById(expected)).thenReturn(Optional.empty());
-//		UserNotFoundException exception = Assertions.assertThrows(UserNotFoundException.class, () -> userAccountService.getUser(expected));
+//		String expected = "User1";
+//		when(userAccountRepository.findById(expected)).thenThrow(new UserNotFoundException());
+//		Assertions.assertThrows(UserNotFoundException.class, () -> {userAccountService.getUser(expected);});
 ////		UserAccountResponseDto actual = ;
-//		
+		
 //	Assertions.assertEquals("User " + userAccount.getLogin() + " not found", exception.getMessage());
-////		Assertions.assertTrue(exception.getMessage().contains("User " + userAccount.getLogin() + " not found"));
+//		Assertions.assertTrue(exception.getMessage().contains("User " + userAccount.getLogin() + " not found"));
 //	}
 	
 	
-	@Test
-	public void removeUserByLogin() throws Exception {
-		String expected = "User3";
-		when(userAccountRepository.findById(expected)).thenReturn(Optional.of(userAccount));
-		UserAccountResponseDto actual = userAccountService.removeUser(expected);
-		verify(userAccountRepository).deleteById(expected);
-	}
+//	@Test
+//	public void removeUserByLogin() throws Exception {
+//		String expected = "User3";
+//		when(userAccountRepository.findById(expected)).thenReturn(Optional.of(userAccount));
+//		UserAccountResponseDto actual = userAccountService.removeUser(expected);
+//		verify(userAccountRepository).deleteById(expected);
+//	}
+
 }
